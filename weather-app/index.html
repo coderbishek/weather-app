@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Weather App</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 420px;
+    }
+    h1 { font-size: 22px; margin-bottom: 20px; color: #7dd3fc; }
+    .search {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    input {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: 14px;
+      outline: none;
+    }
+    input:focus { border-color: #7dd3fc; }
+    button {
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      background: #0ea5e9;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button:hover { background: #38bdf8; }
+    .weather { text-align: center; }
+    .city { font-size: 24px; font-weight: 600; }
+    .country { font-size: 14px; color: #94a3b8; margin-top: 2px; }
+    .temp {
+      font-size: 64px;
+      font-weight: 700;
+      color: #7dd3fc;
+      margin: 16px 0 4px;
+    }
+    .desc {
+      font-size: 16px;
+      color: #94a3b8;
+      text-transform: capitalize;
+      margin-bottom: 24px;
+    }
+    .icon { font-size: 64px; margin: 8px 0; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .tile {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+    }
+    .tile-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .tile-val { font-size: 20px; font-weight: 600; margin-top: 4px; color: #e2e8f0; }
+    .error { color: #f87171; font-size: 14px; text-align: center; padding: 12px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>Weather App</h1>
+  <div class="search">
+    <input type="text" id="cityInput" placeholder="Enter city name..." />
+    <button onclick="getWeather()">Search</button>
+  </div>
+  <div id="error" class="error hidden"></div>
+  <div id="result" class="weather hidden">
+    <div class="icon" id="icon"></div>
+    <div class="city" id="city"></div>
+    <div class="country" id="country"></div>
+    <div class="temp" id="temp"></div>
+    <div class="desc" id="desc"></div>
+    <div class="grid">
+      <div class="tile">
+        <div class="tile-label">Feels like</div>
+        <div class="tile-val" id="feels"></div>
+      </div>
+      <div class="tile">
+        <div class="tile-label">Humidity</div>
+        <div class="tile-val" id="humidity"></div>
+      </div>
+      <div class="tile">
+        <div class="tile-label">Wind</div>
+        <div class="tile-val" id="wind"></div>
+      </div>
+      <div class="tile">
+        <div class="tile-label">Visibility</div>
+        <div class="tile-val" id="visibility"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_KEY = "ba495d18a897dc8d1f0d6720c1fe864d"; 
+
+  const ICONS = {
+    "01": "☀️", "02": "⛅", "03": "☁️", "04": "☁️",
+    "09": "🌧️", "10": "🌦️", "11": "⛈️", "13": "❄️", "50": "🌫️"
+  };
+
+  document.getElementById("cityInput").addEventListener("keydown", e => {
+    if (e.key === "Enter") getWeather();
+  });
+
+  async function getWeather() {
+    const city = document.getElementById("cityInput").value.trim();
+    if (!city) return;
+
+    const errEl = document.getElementById("error");
+    const resEl = document.getElementById("result");
+    errEl.classList.add("hidden");
+    resEl.classList.add("hidden");
+
+    try {
+      const res = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`
+      );
+      if (!res.ok) throw new Error("City not found");
+      const d = await res.json();
+
+      const iconCode = d.weather[0].icon.slice(0, 2);
+      document.getElementById("icon").textContent = ICONS[iconCode] || "🌡️";
+      document.getElementById("city").textContent = d.name;
+      document.getElementById("country").textContent = d.sys.country;
+      document.getElementById("temp").textContent = Math.round(d.main.temp) + "°C";
+      document.getElementById("desc").textContent = d.weather[0].description;
+      document.getElementById("feels").textContent = Math.round(d.main.feels_like) + "°C";
+      document.getElementById("humidity").textContent = d.main.humidity + "%";
+      document.getElementById("wind").textContent = Math.round(d.wind.speed) + " m/s";
+      document.getElementById("visibility").textContent = (d.visibility / 1000).toFixed(1) + " km";
+
+      resEl.classList.remove("hidden");
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.classList.remove("hidden");
+    }
+  }
+</script>
+</body>
+</html>
